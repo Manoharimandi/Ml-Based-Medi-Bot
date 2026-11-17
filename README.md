@@ -4,20 +4,16 @@ A Streamlit deployment of the student Medi-Bot symptom-classification project.
 
 ## Run locally
 
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
-pip install -r requirements.txt
-streamlit run app.py
-```
+1. Clone this repository and open its folder.
+2. Create and activate a Python virtual environment.
+3. Install dependencies with pip install -r requirements.txt.
+4. Start the app with streamlit run app.py.
 
 ## Deploy on Streamlit Community Cloud
 
-1. Push this folder to a GitHub repository.
-2. In Streamlit Community Cloud, choose **Create app** and select that repository.
-3. Set the main file path to `app.py` and deploy.
+Select this repository, set the main file path to app.py, then deploy.
 
-The app uses `Training.csv` for symptom names and class labels, and `model.pkl` for predictions. No secrets are required.
+The app trains a Random Forest classifier from Training.csv the first time it runs and caches the classifier for the life of the app process. This avoids loading the original pickle, which uses an incompatible scikit-learn format. No secrets are required.
 
 ## Medical and privacy notice
 
