@@ -2,12 +2,26 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-from joblib import load
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 
 ROOT = Path(__file__).parent
 DATA = pd.read_csv(ROOT / "Training.csv")
+DATA = DATA.loc[:, ~DATA.columns.astype(str).str.match(r"^Unnamed:")].copy()
+constant_features = [
+    column
+    for column in DATA.columns
+    if column != "prognosis" and DATA[column].nunique(dropna=False) <= 1
+]
+DATA = DATA.drop(columns=constant_features)
+DATA = DATA.rename(
+    columns={
+        column: column[:-2]
+        for column in DATA.columns
+        if column.endswith(".1") and column[:-2] not in DATA.columns
+    }
+)
 FEATURES = [column for column in DATA.columns if column != "prognosis"]
-DISEASES = sorted(DATA["prognosis"].dropna().unique().tolist())
 
 st.set_page_config(page_title="Medi-Bot | Symptom Explorer", page_icon="🩺", layout="centered")
 st.title("🩺 Medi-Bot")
@@ -19,8 +33,13 @@ st.warning(
 st.write("Choose the symptoms you are experiencing, then run the model.")
 
 @st.cache_resource
-def get_model():
-    return load(ROOT / "model.pkl")
+def get_model_and_labels():
+    """Train against this runtime's scikit-learn version to avoid stale pickle formats."""
+    labels = LabelEncoder()
+    target = labels.fit_transform(DATA["prognosis"].astype(str))
+    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    model.fit(DATA[FEATURES], target)
+    return model, labels.classes_
 
 symptoms = st.multiselect(
     "Symptoms",
@@ -32,10 +51,11 @@ symptoms = st.multiselect(
 if st.button("Explore possible condition", type="primary", disabled=not symptoms):
     sample = pd.DataFrame([[int(feature in symptoms) for feature in FEATURES]], columns=FEATURES)
     try:
-        prediction = int(get_model().predict(sample)[0])
-        if prediction < 1 or prediction > len(DISEASES):
+        model, disease_labels = get_model_and_labels()
+        prediction = int(model.predict(sample)[0])
+        if prediction < 0 or prediction >= len(disease_labels):
             raise ValueError("Model returned an unexpected class label")
-        condition = DISEASES[prediction - 1]
+        condition = disease_labels[prediction]
         st.markdown("### Model result")
         st.info(condition)
         st.caption(
