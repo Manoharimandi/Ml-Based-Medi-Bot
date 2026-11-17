@@ -1,8 +1,9 @@
 # Medi-Bot
 
 A Streamlit deployment of the student Medi-Bot symptom-classification project.
-#LIVE
-ml-based-medi-bot-cgeuaprjew8oxdhhfmd4w4.streamlit.app/
+
+## Live
+https://ml-based-medi-bot-cgeuaprjew8oxdhhfmd4w4.streamlit.app/
 
 ## Run locally
 
